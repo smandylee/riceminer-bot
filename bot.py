@@ -87,26 +87,29 @@ channel_group = app_commands.Group(name="channel", description="알림/로그 �
 @site_group.command(name="on", description="사이트 크롤링을 켭니다")
 @app_commands.choices(code=_site_choices())
 async def site_on(interaction: discord.Interaction, code: app_commands.Choice[str]):
+    await interaction.response.defer(ephemeral=True)
     db.set_enabled(client.conn, code.value, True)
-    await interaction.response.send_message(f"✅ {code.name} 크롤링 켜짐", ephemeral=True)
+    await interaction.followup.send(f"✅ {code.name} 크롤링 켜짐", ephemeral=True)
 
 
 @site_group.command(name="off", description="사이트 크롤링을 끕니다")
 @app_commands.choices(code=_site_choices())
 async def site_off(interaction: discord.Interaction, code: app_commands.Choice[str]):
+    await interaction.response.defer(ephemeral=True)
     db.set_enabled(client.conn, code.value, False)
-    await interaction.response.send_message(f"🛑 {code.name} 크롤링 꺼짐", ephemeral=True)
+    await interaction.followup.send(f"🛑 {code.name} 크롤링 꺼짐", ephemeral=True)
 
 
 @site_group.command(name="list", description="사이트별 상태를 확인합니다")
 async def site_list(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
     rows = db.list_sites(client.conn)
     lines = [
         f"`{row['code']}` {SITE_LABELS.get(row['code'], row['code'])} — "
         f"{'ON' if row['enabled'] else 'OFF'}, {row['interval_sec']}초 간격"
         for row in rows
     ]
-    await interaction.response.send_message(
+    await interaction.followup.send(
         "\n".join(lines) or "등록된 사이트가 없습니다", ephemeral=True
     )
 
@@ -116,34 +119,46 @@ async def site_list(interaction: discord.Interaction):
 async def interval_set(
     interaction: discord.Interaction, code: app_commands.Choice[str], seconds: int
 ):
+    await interaction.response.defer(ephemeral=True)
     try:
         db.set_interval(client.conn, code.value, seconds)
     except ValueError as exc:
-        await interaction.response.send_message(f"❌ {exc}", ephemeral=True)
+        await interaction.followup.send(f"❌ {exc}", ephemeral=True)
         return
-    await interaction.response.send_message(f"✅ {code.name} 주기를 {seconds}초로 설정", ephemeral=True)
+    await interaction.followup.send(f"✅ {code.name} 주기를 {seconds}초로 설정", ephemeral=True)
 
 
 @interval_group.command(name="get", description="사이트 크롤링 주기를 확인합니다")
 @app_commands.choices(code=_site_choices())
 async def interval_get(interaction: discord.Interaction, code: app_commands.Choice[str]):
+    await interaction.response.defer(ephemeral=True)
     site = db.get_site(client.conn, code.value)
     if site is None:
-        await interaction.response.send_message("❌ 알 수 없는 사이트입니다", ephemeral=True)
+        await interaction.followup.send("❌ 알 수 없는 사이트입니다", ephemeral=True)
         return
-    await interaction.response.send_message(f"{code.name}: {site['interval_sec']}초", ephemeral=True)
+    await interaction.followup.send(f"{code.name}: {site['interval_sec']}초", ephemeral=True)
 
 
 @channel_group.command(name="set-post", description="새 글 알림을 받을 채널을 이 채널로 설정합니다")
 async def channel_set_post(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
     db.set_post_channel(client.conn, interaction.channel_id)
-    await interaction.response.send_message("✅ 이 채널로 알림을 보냅니다", ephemeral=True)
+    await interaction.followup.send("✅ 이 채널로 알림을 보냅니다", ephemeral=True)
 
 
 @channel_group.command(name="set-log", description="에러 로그를 받을 채널을 이 채널로 설정합니다")
 async def channel_set_log(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
     db.set_log_channel(client.conn, interaction.channel_id)
-    await interaction.response.send_message("✅ 이 채널로 로그를 보냅니다", ephemeral=True)
+    await interaction.followup.send("✅ 이 채널로 로그를 보냅니다", ephemeral=True)
+
+
+@client.tree.error
+async def on_app_command_error(
+    interaction: discord.Interaction, error: app_commands.AppCommandError
+) -> None:
+    command = interaction.command.name if interaction.command else "?"
+    logger.error("명령 처리 실패: %s", command, exc_info=error)
 
 
 client.tree.add_command(site_group)
