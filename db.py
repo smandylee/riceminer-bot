@@ -28,9 +28,10 @@ CREATE TABLE IF NOT EXISTS bot_settings (
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(_SCHEMA)
     for code in config.SITE_CODES:
+        enabled = int(code not in config.DEFAULT_DISABLED_SITES)
         conn.execute(
-            "INSERT OR IGNORE INTO sites (code, enabled, interval_sec) VALUES (?, 1, ?)",
-            (code, config.DEFAULT_INTERVAL_SEC),
+            "INSERT OR IGNORE INTO sites (code, enabled, interval_sec) VALUES (?, ?, ?)",
+            (code, enabled, config.DEFAULT_INTERVAL_SEC),
         )
     conn.execute("INSERT OR IGNORE INTO bot_settings (id) VALUES (1)")
     conn.commit()

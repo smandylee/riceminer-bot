@@ -19,3 +19,7 @@ MIN_INTERVAL_SEC = 60
 DEFAULT_INTERVAL_SEC = 180
 
 SITE_CODES = ("arca", "quasarzone", "fmkorea")
+
+# FM코리아는 데이터센터 IP를 HTTP 430으로 차단한다. 주거용 회선에서만 열리므로
+# 기본값을 꺼짐으로 두고, 집에서 돌릴 때만 /site on 으로 켠다.
+DEFAULT_DISABLED_SITES = ("fmkorea",)

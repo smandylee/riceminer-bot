@@ -1,0 +1,15 @@
+[Unit]
+Description=riceminer-bot Discord hotdeal notifier
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/riceminer-bot
+ExecStart=/home/ubuntu/riceminer-bot/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -28,6 +28,35 @@ python bot.py
 Discord 서버에 봇을 초대할 때는 `applications.commands`, `bot` 스코프와
 `Send Messages`, `Embed Links` 권한이 필요합니다.
 
+## 사이트별 접속 제약
+
+FM코리아는 데이터센터 IP를 HTTP 430으로 차단한다. AWS 서울처럼 한국 리전이어도
+막히며, 브라우저 위장(`impersonate`)으로도 우회되지 않는다. 주거용 회선에서만
+열리므로 기본값이 꺼짐이고, 집에서 돌릴 때 `/site on fmkorea`로 켜면 된다.
+
+퀘이사존은 해외 IP에서 403이 나므로 한국 리전에서 돌려야 한다.
+
+## AWS Lightsail (서울) 배포
+
+```bash
+sudo apt update && sudo apt install -y python3-venv git
+git clone https://github.com/smandylee/riceminer-bot.git
+cd riceminer-bot
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+`.env`에 `DISCORD_TOKEN`을 채운 뒤 systemd에 등록한다.
+
+```bash
+sudo cp riceminer-bot.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now riceminer-bot
+```
+
+상태 확인은 `systemctl status riceminer-bot`, 로그는 `journalctl -u riceminer-bot -f`.
+코드를 갱신할 때는 `git pull` 후 `sudo systemctl restart riceminer-bot`.
+
 ## Railway 배포
 
 1. 이 폴더를 GitHub 저장소로 push
