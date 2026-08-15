@@ -57,6 +57,32 @@ sudo systemctl enable --now riceminer-bot
 상태 확인은 `systemctl status riceminer-bot`, 로그는 `journalctl -u riceminer-bot -f`.
 코드를 갱신할 때는 `git pull` 후 `sudo systemctl restart riceminer-bot`.
 
+### 서버 안정화 (`deploy/`)
+
+Lightsail 최소 사양 인스턴스는 DNS 서버가 VPC 리졸버 하나뿐이고 스왑이 없다.
+리졸버가 흔들리면 봇이 죽지 않은 채 재접속만 반복하며 오프라인 상태로 남으므로
+(`Temporary failure in name resolution`) 아래를 함께 설정한다.
+
+```bash
+# 스왑 1GB
+sudo fallocate -l 1G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# DNS 예비 서버 (VPC 리졸버 + Cloudflare + Google)
+sudo cp deploy/99-dns-fallback.yaml /etc/netplan/
+sudo chmod 600 /etc/netplan/99-dns-fallback.yaml
+sudo netplan apply
+
+# 이름 해석이 실패하면 리졸버와 봇을 되살리는 감시 타이머 (2분 주기)
+sudo install -m 755 deploy/dns-watchdog.sh /usr/local/bin/
+sudo install -m 644 deploy/dns-watchdog.service deploy/dns-watchdog.timer /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now dns-watchdog.timer
+```
+
+`99-dns-fallback.yaml`의 인터페이스명(`ens5`)과 VPC 리졸버 주소는 인스턴스마다 다르므로
+`resolvectl status`로 확인 후 맞춘다.
+
 ## Railway 배포
 
 1. 이 폴더를 GitHub 저장소로 push

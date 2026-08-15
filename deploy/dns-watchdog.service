@@ -1,0 +1,6 @@
+[Unit]
+Description=Restore DNS resolution when it fails
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/dns-watchdog.sh
